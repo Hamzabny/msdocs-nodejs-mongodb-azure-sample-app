@@ -14,11 +14,15 @@ async function getApp() {
   // Database
   // Use AZURE_COSMOS_CONNECTIONSTRING if available, otherwise fall back to MONGODB_URI
   const mongoUri = process.env.AZURE_COSMOS_CONNECTIONSTRING || process.env.MONGODB_URI;
-
+  if (!mongoUri) {
+    console.error("No database connection string found in environment variables.");
+    process.exit(1);  // Stop the app if no connection string is provided
+  }
+  
   mongoose.connect(mongoUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    connectTimeoutMS: 30000,  // Increase the timeout to 30 seconds
+    connectTimeoutMS: 30000,
     socketTimeoutMS: 30000,
   })
   .then(() => {
@@ -26,6 +30,7 @@ async function getApp() {
   })
   .catch((err) => {
     console.error("Error connecting to database:", err);
+    process.exit(1); // Exit the application if DB connection fails
   });
   
 
@@ -54,10 +59,14 @@ async function getApp() {
   ); // redirect CSS bootstrap
 
   // catch 404 and forward to error handler
-  app.use(function (req, res, next) {
-    next(createError(404));
+  app.use((req, res, next) => {
+    res.setTimeout(30000, () => {
+      console.log('Request timed out');
+      res.status(408).send('Request Timeout');
+    });
+    next();
   });
-
+  
   // error handler
   app.use(function (err, req, res, next) {
     // set locals, only providing error in development
