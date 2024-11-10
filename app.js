@@ -13,13 +13,24 @@ async function getApp() {
 
   // Database
   // Use AZURE_COSMOS_CONNECTIONSTRING if available, otherwise fall back to MONGODB_URI
-  const mongoUri = process.env.MONGODB_URI; // For App Service, change to process.env.AZURE_COSMOS_CONNECTIONSTRING || process.env.MONGODB_URI;
+  const mongoUri = process.env.AZURE_COSMOS_CONNECTIONSTRING || process.env.MONGODB_URI; // For App Service, change to process.env.AZURE_COSMOS_CONNECTIONSTRING || process.env.MONGODB_URI;
 
-  mongoose.connect(mongoUri).then(() => {
+  const options = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 30000,  // Increase timeout duration
+    socketTimeoutMS: 45000,           // Increase socket timeout
+  };
+
+  try {
+    // Wait for the database connection to succeed
+    await mongoose.connect(mongoUri, options);
     console.log('Connected to database');
-  }).catch((err) => {
+  } catch (err) {
     console.error('Error connecting to database:', err);
-  });
+    throw new Error('Database connection failed');  // Will stop app startup if failed
+  }
+
 
   var app = express();
 
